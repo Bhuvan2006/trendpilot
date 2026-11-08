@@ -43,7 +43,8 @@ class Memory:
 
     def seen_urls(self) -> set[str]:
         with db.connect(self.path) as c:
-            return {r["source_url"] for r in c.execute("SELECT source_url FROM trends")}
+            # Only finished runs count, so items from a failed run are retried.
+            return {r["source_url"] for r in c.execute("SELECT t.source_url FROM trends t JOIN runs r ON r.id = t.run_id WHERE r.status = 'done'")}
 
     def remember(self, key: str, value: str, source: str) -> None:
         with db.connect(self.path) as c:
