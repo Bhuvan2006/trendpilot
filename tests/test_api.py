@@ -95,6 +95,14 @@ def test_nvidia_needs_its_own_key_and_has_a_price_entry(tmp_path, monkeypatch):
     assert main.is_priced("nvidia/nemotron-3-ultra-550b-a55b")
 
 
+def test_bad_cost_setting_is_refused_without_locking_future_runs(client, monkeypatch):
+    monkeypatch.setenv("MAX_COST_USD", "$1")
+    r = client.post("/api/pipeline/run", json={})
+    assert r.status_code == 400 and "MAX_COST_USD" in r.json()["detail"]
+    monkeypatch.setenv("MAX_COST_USD", "1.00")
+    assert run_to_end(client)["status"] == "done"
+
+
 def test_interrupted_run_is_closed_on_startup(tmp_path, monkeypatch):
     monkeypatch.setenv("MODEL_PROVIDER", "mock")
     path = tmp_path / "t.db"

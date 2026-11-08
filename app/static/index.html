@@ -127,15 +127,21 @@ async function trends() {
         h('td', {}, tag(t.status)), h('td', {}, link(t.source_url)))))))) ];
 }
 
-async function act(fn, done) { try { const r = await fn(); if (done) toast(done(r)); render(); } catch (e) { toast('Blocked: ' + e.message); render(); } }
+// Only the acted-on card is redrawn, so unsaved text in other cards survives. A blocked action keeps this card's text too.
+async function cardAction(card, id, fn, done) {
+  try { const r = await fn(); toast(done(r)); card.replaceWith(draftCard((await api('/api/content')).find(x => x.id === id))); }
+  catch (e) { toast('Blocked: ' + e.message); }
+}
 
 function draftCard(d) {
   const open = d.status === 'needs_review';
-  const box = h('textarea', {'aria-label': `Text of ${d.platform} draft ${d.id}`, readonly: !open});
+  const dirty = e => { e.target.dataset.dirty = '1'; };
+  const box = h('textarea', {'aria-label': `Text of ${d.platform} draft ${d.id}`, readonly: !open, oninput: dirty});
   box.value = d.body;
-  const reason = h('input', {'aria-label': 'Reason for rejecting', placeholder: 'Reason for rejecting (agents learn from this)'});
+  const reason = h('input', {'aria-label': 'Reason for rejecting', placeholder: 'Reason for rejecting (agents learn from this)', oninput: dirty});
   const edit = () => box.value !== d.body ? api(`/api/content/${d.id}/edit`, {body: box.value}) : Promise.resolve();
-  return h('div', {class: 'card'},
+  const act = (fn, done) => cardAction(card, d.id, fn, done);
+  const card = h('div', {class: 'card'},
     h('div', {class: 'row', style: 'margin:0 0 6px'}, h('h2', {style: 'margin:0;text-transform:capitalize'}, d.platform), tag(d.status),
       h('span', {class: 'tag ' + (d.review_passed ? 'ok' : 'bad')}, d.review_passed ? `Review passed ${d.review_score}` : 'Flagged by review'), d.edited ? h('span', {class: 'tag'}, 'Edited') : null),
     h('div', {class: 'meta'}, `${d.topic} · ${d.pillar} · score ${d.score.toFixed(1)} · `, link(d.source_url)),
@@ -146,6 +152,7 @@ function draftCard(d) {
       d.status !== 'published' ? h('button', {class: 'primary', onclick: () => act(() => api(`/api/publish/${d.id}`, {}), p => `Dry run recorded as ${p.external_id}. Nothing was posted.`)}, 'Publish') : null,
       open ? reason : null,
       open ? h('button', {onclick: () => act(() => api(`/api/content/${d.id}/reject`, {reviewer: 'bhuvan', comment: reason.value}), () => 'Rejected and saved to learning memory')}, 'Reject') : null));
+  return card;
 }
 
 async function content() {
@@ -184,7 +191,7 @@ async function poll() {
   document.getElementById('run').textContent = s.running ? 'Running...' : 'Run pipeline';
   const finished = running && !s.running;
   running = s.running;
-  if (finished) { toast('Run finished'); render(); }
+  if (finished) { toast('Run finished'); if (!document.querySelector('main [data-dirty]')) render(); }
   // Only live views refresh during a run, so a draft being edited is never overwritten.
   else if (running && (tab === 'Pipeline' || tab === 'Audit')) render();
 }

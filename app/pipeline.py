@@ -1,6 +1,4 @@
 """The Agno Workflow. Code owns the order, and agents only decide inside a step."""
-import json
-import re
 from pathlib import Path
 
 from agno.workflow import Workflow
@@ -53,12 +51,19 @@ def _finish(path, run_id, status, message):
     db.audit(path, run_id, "workflow", "finished", status, allowed=status == "done", detail=message)
 
 
-def _data(obj) -> str:
-    return f"<untrusted_source_data>{json.dumps(obj)}</untrusted_source_data>"
+_data = agents.untrusted
 
 
 def run_pipeline(path, provider, model_id, max_cost_usd, top_n=2, collectors=None, run_id=None) -> int:
     run_id = run_id or create_run(path, provider, model_id)
+    try:
+        _execute(path, provider, model_id, max_cost_usd, top_n, collectors, run_id)
+    except Exception as e:  # a setup failure must not leave the run stuck as running
+        _finish(path, run_id, "failed", f"{type(e).__name__}: {e}")
+    return run_id
+
+
+def _execute(path, provider, model_id, max_cost_usd, top_n, collectors, run_id) -> None:
     memory = Memory(path)
     seed_brand(memory)
     harness = Harness(path, run_id, max_cost_usd, model_id)
@@ -122,8 +127,8 @@ def run_pipeline(path, provider, model_id, max_cost_usd, top_n=2, collectors=Non
                     continue
                 momentum = c.execute("SELECT momentum FROM trends WHERE source_url = ?", (t.source_url,)).fetchone()["momentum"]
                 total = score(t.relevance, t.brand_fit, momentum, t.evidence, t.content_potential)
-                c.execute("UPDATE trends SET topic=?, summary=?, relevance=?, brand_fit=?, evidence=?, content_potential=?, score=?, pillar=?, reason=?, angle=?, status='rejected' WHERE source_url=?",
-                          (known[t.source_url].topic, known[t.source_url].summary, t.relevance, t.brand_fit, t.evidence, t.content_potential, total, t.pillar, t.reason, t.angle, t.source_url))
+                c.execute("UPDATE trends SET topic=?, relevance=?, brand_fit=?, evidence=?, content_potential=?, score=?, pillar=?, reason=?, angle=?, status='rejected' WHERE source_url=?",
+                          (known[t.source_url].topic, t.relevance, t.brand_fit, t.evidence, t.content_potential, total, t.pillar, t.reason, t.angle, t.source_url))
                 scored.append((total, t.source_url))
             top = [url for total, url in sorted(scored, reverse=True) if total >= QUALIFY_AT][:top_n]
             for url in top:
@@ -158,19 +163,19 @@ def run_pipeline(path, provider, model_id, max_cost_usd, top_n=2, collectors=Non
         return r.approved, r.score, notes
 
     def review():
-        with_notes = 0
+        with_notes, rows = 0, []
         for draft in state["drafts"]:
             passed, review_score, notes = check(draft)
             if not passed:  # one revision only, so a stubborn draft cannot burn the budget
-                out = harness.run_agent(team["Content Studio"], f"{write_prompt(draft['trend'])}\n\nRevise the {draft['platform']} draft below. Reviewer feedback: {notes}\n\nDraft:\n{draft['body']}", StudioOutput)
+                out = harness.run_agent(team["Content Studio"], f"{write_prompt(draft['trend'])}\n\nRevise the {draft['platform']} draft below using the reviewer feedback.\n" + _data({"reviewer_feedback": notes, "draft": draft["body"]}), StudioOutput)
                 revised = next((d.body for d in out.drafts if d.platform == draft["platform"]), None)
                 if revised:
                     draft["body"] = revised
                     passed, review_score, notes = check(draft)
             with_notes += not passed
-            with db.connect(path) as c:
-                c.execute("INSERT INTO drafts(trend_id, run_id, platform, body, status, review_passed, review_score, review_notes) VALUES(?,?,?,?,?,?,?,?)",
-                          (draft["trend"]["id"], run_id, draft["platform"], draft["body"], "needs_review", int(passed), review_score, notes))
+            rows.append((draft["trend"]["id"], run_id, draft["platform"], draft["body"], "needs_review", int(passed), review_score, notes))
+        with db.connect(path) as c:  # all at once, so a failed run leaves no partial drafts for its retry to duplicate
+            c.executemany("INSERT INTO drafts(trend_id, run_id, platform, body, status, review_passed, review_score, review_notes) VALUES(?,?,?,?,?,?,?,?)", rows)
         return f"{len(state['drafts'])} drafts sent to human review, {with_notes} flagged"
 
     def step(name, fn):
@@ -197,4 +202,3 @@ def run_pipeline(path, provider, model_id, max_cost_usd, top_n=2, collectors=Non
         _finish(path, run_id, "failed", state["failed"])
     else:
         _finish(path, run_id, "done", state["stop"] or f"{len(state['drafts'])} drafts ready for review")
-    return run_id

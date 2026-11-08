@@ -31,6 +31,12 @@ def test_newest_learning_replaces_older_for_same_key(tmp_path):
     assert "concrete example" in text and "hypey" not in text
 
 
+def test_guard_matches_banned_words_at_word_starts_only():
+    assert check_draft("Keep your data secure", "linkedin", "") == []
+    assert any("banned" in p for p in check_draft("This cures burnout", "linkedin", ""))
+    assert any("banned" in p for p in check_draft("Results guaranteed", "linkedin", ""))
+
+
 def test_guard_flags_length_banned_and_unsupported_numbers():
     assert check_draft("Hello there", "linkedin", "") == []
     assert any("length" in p for p in check_draft("x" * 2201, "instagram", ""))

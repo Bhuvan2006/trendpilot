@@ -88,6 +88,63 @@ def test_approved_draft_cannot_be_edited(tmp_path):
         publishing.edit(path, d, "swap the text after approval")
 
 
+def test_pending_post_is_refused_so_the_adapter_cannot_run_twice(tmp_path):
+    path = tmp_path / "t.db"
+    d = make_draft(path)
+    publishing.approve(path, d, "bhuvan")
+    with db.connect(path) as c:
+        c.execute("INSERT INTO posts(draft_id, platform, mode, status, ts) VALUES(?,?,?,?,?)", (d, "linkedin", "dry_run", "pending", db.now()))
+    adapter = Adapter()
+    with pytest.raises(GateError):
+        publishing.publish(path, d, adapter)
+    assert adapter.calls == 0
+
+
+def interleave(monkeypatch, path, sql):
+    """Runs another writer right after the gate has read the draft, the window a race would use."""
+    real, done = publishing._draft, []
+
+    def wrapper(c, draft_id):
+        row = real(c, draft_id)
+        if not done:
+            done.append(1)
+            with db.connect(path) as other:
+                other.execute(sql, (draft_id,))
+        return row
+
+    monkeypatch.setattr(publishing, "_draft", wrapper)
+
+
+def test_approve_refuses_text_changed_after_the_guard_read_it(tmp_path, monkeypatch):
+    path = tmp_path / "t.db"
+    d = make_draft(path)
+    interleave(monkeypatch, path, "UPDATE drafts SET body = 'The world''s only twin' WHERE id = ?")
+    with pytest.raises(GateError):
+        publishing.approve(path, d, "bhuvan")
+    with db.connect(path) as c:
+        assert c.execute("SELECT status FROM drafts WHERE id = ?", (d,)).fetchone()["status"] == "needs_review"
+
+
+def test_edit_cannot_land_after_a_concurrent_approval(tmp_path, monkeypatch):
+    path = tmp_path / "t.db"
+    d = make_draft(path)
+    interleave(monkeypatch, path, "UPDATE drafts SET status = 'approved' WHERE id = ?")
+    with pytest.raises(GateError):
+        publishing.edit(path, d, "swapped text")
+    with db.connect(path) as c:
+        assert c.execute("SELECT body FROM drafts WHERE id = ?", (d,)).fetchone()["body"] == "A plain post"
+
+
+def test_reject_cannot_overwrite_a_concurrent_approval(tmp_path, monkeypatch):
+    path = tmp_path / "t.db"
+    d = make_draft(path)
+    interleave(monkeypatch, path, "UPDATE drafts SET status = 'approved' WHERE id = ?")
+    with pytest.raises(GateError):
+        publishing.reject(path, d, "bhuvan", "no")
+    with db.connect(path) as c:
+        assert c.execute("SELECT status FROM drafts WHERE id = ?", (d,)).fetchone()["status"] == "approved"
+
+
 def test_reject_stores_learning(tmp_path):
     path = tmp_path / "t.db"
     d = make_draft(path)

@@ -2,6 +2,7 @@
 import json
 import time
 
+from agno.exceptions import StopAgentRun
 from pydantic import BaseModel, ValidationError
 
 from app import db
@@ -14,6 +15,7 @@ POLICY = {
     "Brand Reviewer": {"search_brand_knowledge"} | SKILL_TOOLS,
 }
 MAX_TOOL_CALLS = 6
+GRACE_DENIALS = 3  # denials a model may receive and still finish normally before its run is stopped
 MAX_ATTEMPTS = 2
 # USD per million tokens, (input, output). Cached reads are charged at the full rate, so cost is a safe overestimate.
 PRICES = {"claude-sonnet-5-5": (2.0, 10.0), "claude-haiku-5-5": (0.10, 0.50), "claude-opus-5-5": (4.0, 20.0), "mock": (0.0, 0.0),
@@ -54,6 +56,8 @@ class Harness:
                 reason = None
             if reason:
                 db.audit(self.path, self.run_id, agent_name, "tool_call", function_name, allowed=False, detail=reason)
+                if count > MAX_TOOL_CALLS + GRACE_DENIALS:  # a model that ignores denials would otherwise loop and keep billing
+                    raise StopAgentRun(f"{agent_name} kept calling tools after being denied")
                 return f"DENIED by harness: {reason}"
             started = time.monotonic()
             result = function_call(**arguments)
