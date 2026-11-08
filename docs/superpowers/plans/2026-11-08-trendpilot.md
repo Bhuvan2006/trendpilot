@@ -73,3 +73,9 @@
 ## Rulings
 
 Decisions made while executing are listed here with their cost if wrong.
+
+- Added OpenRouter (`nvidia/nemotron-3.5-super-vl:free`) as the default provider after the Anthropic account had no credit. Cost if wrong: one setting change back.
+- Seen URLs count only from finished runs, found when a failed run hid its items from the retry. Cost if wrong: a few repeated items.
+- Rulings are kept in this file instead of the skill's ledger script, so they stay in git. Cost if wrong: none for the code.
+- Added `TRENDPILOT_DB` so mock data never mixes with real data. Cost if wrong: one environment variable.
+- Live model run is still outstanding, because accounts had no credit or free quota. Cost if wrong: prompts and structured output are unproven on a real model.
