@@ -6,6 +6,7 @@ from types import SimpleNamespace
 
 from agno.agent import Agent
 from agno.models.anthropic import Claude
+from agno.models.openrouter import OpenRouter
 from agno.skills import LocalSkills, Skills
 
 from app import schemas, sources
@@ -82,6 +83,13 @@ class MockAgent:
         return SimpleNamespace(content=json.dumps(reply), metrics=SimpleNamespace(input_tokens=len(prompt) // 4, output_tokens=60))
 
 
+def make_model(provider: str, model_id: str):
+    # No custom temperature, because Sonnet 5.5 rejects one. The timeout keeps one hung call from stalling a run.
+    if provider == "openrouter":
+        return OpenRouter(id=model_id, max_tokens=8000, timeout=120)
+    return Claude(id=model_id, max_tokens=8000, timeout=120)
+
+
 def build_agents(harness, memory, provider: str, model_id: str, found_items: list) -> dict:
     if provider == "mock":
         return {name: MockAgent(name) for name in SPEC}
@@ -89,8 +97,7 @@ def build_agents(harness, memory, provider: str, model_id: str, found_items: lis
     return {
         name: Agent(
             name=name,
-            # Sonnet 5.5 rejects a custom temperature, so none is set. The timeout keeps one hung call from stalling a run.
-            model=Claude(id=model_id, max_tokens=8000, timeout=120),
+            model=make_model(provider, model_id),
             description=role,
             instructions=[f"First call get_skill_instructions for the '{skill}' skill and follow it.", UNTRUSTED],
             skills=Skills(loaders=[LocalSkills(str(SKILLS_DIR / skill))]),

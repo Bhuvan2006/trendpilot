@@ -10,11 +10,12 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
 from app import db, pipeline, publishing
-from app.harness import PRICES
+from app.harness import is_priced
 from app.memory import Memory
 from app.publishing import GateError
 
 ROOT = Path(__file__).parent.parent
+KEY_ENV = {"anthropic": "ANTHROPIC_API_KEY", "openrouter": "OPENROUTER_API_KEY"}
 
 
 class Empty(BaseModel):
@@ -61,15 +62,17 @@ def create_app(db_path=None) -> FastAPI:
     @app.get("/api/status")
     def status():
         provider, model = settings()
-        return {"provider": provider, "model": model, "running": run_lock.locked(),
-                "key_configured": provider == "mock" or bool(os.getenv("ANTHROPIC_API_KEY"))}
+        return {"provider": provider, "model": model, "running": run_lock.locked(), "key_name": KEY_ENV.get(provider),
+                "key_configured": provider == "mock" or bool(os.getenv(KEY_ENV.get(provider, "")))}
 
     @app.post("/api/pipeline/run", status_code=202)
     def run(_: Empty):
         provider, model = settings()
-        if provider != "mock" and not os.getenv("ANTHROPIC_API_KEY"):
-            raise HTTPException(400, "Add ANTHROPIC_API_KEY to trendpilot/.env and restart the server")
-        if model not in PRICES:
+        if provider != "mock" and provider not in KEY_ENV:
+            raise HTTPException(400, f"Unknown MODEL_PROVIDER {provider}")
+        if provider != "mock" and not os.getenv(KEY_ENV[provider]):
+            raise HTTPException(400, f"Add {KEY_ENV[provider]} to trendpilot/.env and restart the server")
+        if not is_priced(model):
             raise HTTPException(400, f"No price configured for {model}, so the spend cap cannot work")
         if not run_lock.acquire(blocking=False):
             raise HTTPException(409, "A run is already in progress")

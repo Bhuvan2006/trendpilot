@@ -130,6 +130,16 @@ def test_usage_is_recorded_with_real_price(tmp_path):
     assert (row["actor"], row["input_tokens"], row["output_tokens"]) == ("Trend Scout", 1_000_000, 100_000)
 
 
+def test_free_openrouter_models_cost_nothing_and_still_count_tokens(tmp_path):
+    path = tmp_path / "t.db"
+    db.init(path)
+    with db.connect(path) as c:
+        run = c.execute("INSERT INTO runs(status) VALUES('running')").lastrowid
+    h = Harness(path, run, 1.0, "nvidia/some-model:free", backoff_s=0)
+    h.run_agent(FakeAgent(['{"answer": "x"}'], tokens=(5000, 500)), "go", Out)
+    assert h.cost_usd == 0 and h.input_tokens == 5000
+
+
 def test_unknown_model_refuses_to_run_without_a_price(tmp_path):
     with pytest.raises(ValueError):
         Harness(tmp_path / "t.db", 1, 1.0, "made-up-model")
