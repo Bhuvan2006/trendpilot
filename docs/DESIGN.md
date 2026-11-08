@@ -65,10 +65,10 @@ Models propose and code enforces.
 | Control | Mechanism |
 |---|---|
 | Tool permission | One Agno `tool_hook` checks every call against a per-agent allowlist. No agent is given a publish tool at all. |
-| Runaway loops | `tool_call_limit` on the agent and a per-agent count in the hook |
+| Runaway loops | Per-agent count in the hook: calls over the limit are denied, and a model that keeps going is stopped |
 | Invalid output | Pydantic validation, one retry that feeds the error back |
 | Transient failure | Bounded retry with backoff, and a model client timeout |
-| Cost | Budget checked before every model call using real provider usage |
+| Cost | Budget checked before every agent run using real provider usage |
 | Invented sources | A trend must cite a URL that was actually fetched this run |
 | Risky claims | Deterministic guard: platform length, banned phrases, numeric claims must appear in approved text or the source |
 | Prompt injection | Fetched text is delimited as untrusted data, and the worst outcome is a bad draft that a human must still approve, since agents cannot publish |
@@ -127,4 +127,4 @@ The model scores relevance, brand fit, evidence and content potential. **Momentu
 
 ## 10. Scale and reliability, if this were real
 
-A run is about ten model calls and is limited by provider latency, not local compute. To scale: move runs to a queue with idempotent steps, use Postgres, add a scheduler, put login in front of approval, and add `pgvector` if keyword retrieval starts to miss. Monitor cost per run, guard rejection rate, human approval rate and source failures. Human approval rate is the metric to tune the score weights against.
+The measured real run made 10 agent runs and 30 tool calls in about 5.5 minutes, so throughput is limited by provider latency, not local compute. To scale: move runs to a queue with idempotent steps, use Postgres, add a scheduler, put login in front of approval, and add `pgvector` if keyword retrieval starts to miss. Monitor cost per run, guard rejection rate, human approval rate and source failures. Human approval rate is the metric to tune the score weights against.

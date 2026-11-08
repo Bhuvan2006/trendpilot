@@ -8,7 +8,7 @@ Design: [docs/DESIGN.md](docs/DESIGN.md) · Demo script: [docs/DEMO.md](docs/DEM
 
 ## Status
 
-Tested in mock mode with 44 passing tests, including the real Agno Workflow, the API and the approval gate. Hacker News and arXiv were confirmed live. **A full run on a real model has not completed yet**, because every model account tried so far had no credit or had used its daily free limit. Those attempts failed cleanly and cost nothing.
+59 passing tests, run offline, cover the real Agno Workflow, the API and the approval gate. Two full runs on live Hacker News and arXiv data with `nvidia/nemotron-3-ultra-550b-a55b` completed in 5.5 and 7 minutes, used 90,139 and 125,868 input tokens (16,014 and 21,622 output), and each produced 4 reviewed drafts from real sources. In the second run the Brand Reviewer flagged 2 drafts for overclaiming about Dots-In. Two runs are not a benchmark.
 
 ## Setup (Windows PowerShell)
 
@@ -18,7 +18,7 @@ uv pip install --python .venv/Scripts/python.exe -r requirements.txt
 Copy-Item .env.example .env
 ```
 
-Put your key in `.env`.
+Put your key in `.env`. The default is NVIDIA's hosted model (`NVIDIA_API_KEY`). `MODEL_PROVIDER` can also be `anthropic` or `openrouter`, each with its own key.
 
 ## Run
 
@@ -55,7 +55,9 @@ Tests:
 
 ## Limitations
 
-- No real model run has completed yet, so prompt quality and real token costs are unmeasured.
+- Tested end to end on one real model only. Claude and OpenRouter calls failed on account credit limits, so those providers are unverified.
+- A real run takes 5.5 to 7 minutes on the NVIDIA model. NVIDIA's hosted endpoint is unbilled, so the spend cap has no effect there.
+- The spend cap is checked before each agent run, not each model request, so one agent run can overshoot it slightly.
 - Brand facts come from the company's public website, are unverified, and have not been reviewed by Dots-In.
 - Publishing is a dry run. A real LinkedIn adapter needs an OAuth app and page permission.
 - Score weights are a starting heuristic, not a validated model.

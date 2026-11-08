@@ -1,6 +1,12 @@
 # Demo script (about 7 minutes)
 
-Before the interview, start the app and do one complete run. If no model is available, use mock mode and say so at the start.
+A real run takes 5.5 to 7 minutes, so present the saved real run in `demo.db`:
+
+```powershell
+$env:TRENDPILOT_DB='demo.db'; .\.venv\Scripts\python.exe -m app.main
+```
+
+It has 2 drafts the Brand Reviewer flagged for overclaiming, which is the best thing to show in step 5: Approve is refused until the text is edited. Press Run only if there's time. Mock mode shows the flow instantly, but say that it's canned data.
 
 ## 1. The problem (30 seconds)
 

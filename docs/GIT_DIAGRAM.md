@@ -27,4 +27,15 @@ gitGraph
     commit id: "docs: readme, demo, git diagram"
     checkout main
     merge docs/readme-demo id: "merge: docs"
+    branch feat/nvidia
+    commit id: "feat(models): add NVIDIA provider"
+    commit id: "feat(models): wire NVIDIA in"
+    commit id: "fix(agents): stop forcing JSON mode"
+    checkout main
+    merge feat/nvidia id: "merge: nvidia provider"
+    branch fix/review-findings
+    commit id: "fix: close review findings"
+    commit id: "docs: measured results"
+    checkout main
+    merge fix/review-findings id: "merge: review findings"
 ```
