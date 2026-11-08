@@ -4,59 +4,112 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>TrendPilot AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#f6f7f9;--card:#fff;--ink:#16191f;--muted:#5d6675;--line:#e1e5eb;--accent:#3b4cca;--accent-ink:#fff;--ok:#12784a;--ok-bg:#e3f5ec;--warn:#8f5a00;--warn-bg:#fdf0d8;--bad:#b3261e;--bad-bg:#fbe6e4}
-@media (prefers-color-scheme:dark){:root{--bg:#101318;--card:#191d24;--ink:#e9ecf1;--muted:#a0a9b8;--line:#2c323c;--accent:#8c9bff;--accent-ink:#10131a;--ok:#6fdcaa;--ok-bg:#163427;--warn:#f2c26b;--warn-bg:#3a2c10;--bad:#ff9d94;--bad-bg:#40201d}}
+:root{
+  --bg:#F6F4EF;--card:#FFFEFB;--sunken:#F1EEE6;--ink:#24241F;--muted:#6F6E66;--line:#E4E0D6;--line-strong:#D3CEC1;
+  --accent:#2F5D50;--accent-hover:#274F44;--accent-ink:#FFFEFB;--accent-tint:#E4EDE8;
+  --ok:#2F6B4F;--ok-bg:#E2EFE7;--warn:#7A5718;--warn-bg:#F3E9D4;--bad:#A4452F;--bad-bg:#F5E3DD;
+  --sans:Geist,ui-sans-serif,"Segoe UI",system-ui,sans-serif;--mono:"Geist Mono",ui-monospace,"Cascadia Mono",Consolas,monospace;
+  --ease:cubic-bezier(.22,1,.36,1);--fast:180ms;--slow:320ms;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#171815;--card:#1F201C;--sunken:#191A17;--ink:#ECEBE4;--muted:#A5A398;--line:#33342E;--line-strong:#46473F;
+  --accent:#8FBFAE;--accent-hover:#A3CDBE;--accent-ink:#14201C;--accent-tint:#26342E;
+  --ok:#8FC7A8;--ok-bg:#20312A;--warn:#DDB777;--warn-bg:#352C1A;--bad:#E59A85;--bad-bg:#3B2620;
+}}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
-header{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;padding:14px 20px;background:var(--card);border-bottom:1px solid var(--line)}
-h1{font-size:18px;margin:0}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 var(--sans);-webkit-font-smoothing:antialiased;text-wrap:pretty}
+header{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;max-width:1120px;margin:0 auto;padding:24px 24px 16px}
+h1{font-size:20px;font-weight:600;letter-spacing:-.015em;margin:0;line-height:1.3}
 .sub{color:var(--muted);font-size:13px}
 .spacer{flex:1}
-nav{display:flex;gap:4px;padding:8px 20px 0;overflow-x:auto}
-nav button{background:none;border:0;border-bottom:2px solid transparent;border-radius:0;color:var(--muted);padding:8px 12px;font-weight:600}
-nav button[aria-selected=true]{color:var(--ink);border-color:var(--accent)}
-main{max-width:1080px;margin:0 auto;padding:16px 20px 60px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:14px}
-h2{font-size:15px;margin:0 0 10px}
-button{font:inherit;font-weight:600;padding:7px 14px;border-radius:7px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+#model{font-family:var(--mono);font-size:12px;font-weight:400;background:transparent;border:1px solid var(--line);color:var(--muted)}
+.bar{border-bottom:1px solid var(--line)}
+nav{position:relative;display:flex;gap:4px;max-width:1120px;margin:0 auto;padding:0 24px;overflow-x:auto;scrollbar-width:none}
+nav::-webkit-scrollbar{display:none}
+nav button{background:none;border:0;border-radius:6px 6px 0 0;color:var(--muted);padding:10px 14px;font-weight:500;min-height:0}
+nav button:hover:not(:disabled){background:none;color:var(--ink);border-color:transparent}
+nav button:active:not(:disabled){transform:none}
+nav button[aria-selected=true]{color:var(--ink)}
+#tab-ind{position:absolute;left:0;bottom:0;height:2px;width:0;background:var(--accent);border-radius:2px;transition:transform var(--slow) var(--ease),width var(--slow) var(--ease)}
+main{max-width:1120px;margin:0 auto;padding:24px 24px 72px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:24px;margin-bottom:16px;transition:border-color var(--fast) var(--ease)}
+h2{font-size:15px;font-weight:600;letter-spacing:-.005em;margin:0 0 12px}
+.drafts{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,440px),1fr));gap:16px;align-items:start}
+.drafts .card{margin:0}
+.drafts .card:hover{border-color:var(--line-strong)}
+button{font:inherit;font-size:14px;font-weight:500;min-height:36px;padding:7px 14px;border-radius:7px;border:1px solid var(--line-strong);background:var(--card);color:var(--ink);cursor:pointer;transition:background-color var(--fast) var(--ease),border-color var(--fast) var(--ease),color var(--fast) var(--ease),opacity var(--fast) var(--ease),transform var(--fast) var(--ease)}
+button:hover:not(:disabled){background:var(--sunken);border-color:var(--muted)}
+button:active:not(:disabled){transform:translateY(1px)}
 button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
-button:disabled{opacity:.55;cursor:default}
-button:focus-visible,textarea:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
-.tag{display:inline-block;font-size:12px;font-weight:600;padding:2px 8px;border-radius:99px;background:var(--line);color:var(--ink)}
+button.primary:hover:not(:disabled){background:var(--accent-hover);border-color:var(--accent-hover)}
+button:disabled{opacity:.6;cursor:default}
+#run:disabled::before{content:"";display:inline-block;width:7px;height:7px;margin-right:8px;border-radius:50%;background:currentColor;vertical-align:1px;animation:breathe 1.4s var(--ease) infinite alternate}
+button:focus-visible,textarea:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.tag{display:inline-block;font-size:12px;font-weight:500;line-height:18px;padding:1px 9px;border-radius:99px;background:var(--sunken);color:var(--muted)}
+.tag::first-letter{text-transform:uppercase}
+#model::first-letter{text-transform:none}
 .tag.ok{background:var(--ok-bg);color:var(--ok)}.tag.warn{background:var(--warn-bg);color:var(--warn)}.tag.bad{background:var(--bad-bg);color:var(--bad)}
-.banner{background:var(--warn-bg);color:var(--warn);padding:8px 20px;font-size:13px;font-weight:600}
-.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
-.step{border:1px solid var(--line);border-radius:8px;padding:10px;font-size:13px;font-weight:600}
-.step.done{border-color:var(--ok);background:var(--ok-bg);color:var(--ok)}
-.stats{display:flex;flex-wrap:wrap;gap:24px;margin-top:12px}
-.stat b{display:block;font-size:20px;font-variant-numeric:tabular-nums}
-.stat span{color:var(--muted);font-size:12px}
+.banner{background:var(--warn-bg);color:var(--warn);padding:8px 24px;font-size:13px;font-weight:500;text-align:center}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.step{display:flex;align-items:center;gap:8px;background:var(--sunken);border-radius:7px;padding:10px 12px;font-size:13px;font-weight:500;color:var(--muted)}
+.step::before{content:"";flex:none;width:7px;height:7px;border-radius:50%;background:var(--line-strong)}
+.step.active{background:var(--accent-tint);color:var(--accent)}
+.step.active::before{background:var(--accent)}
+.step.done{background:var(--ok-bg);color:var(--ok)}
+.step.done::before{background:var(--ok)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:16px;margin-top:24px;padding-top:24px;border-top:1px solid var(--line)}
+.stat b{display:block;font:500 26px/1.2 var(--mono);letter-spacing:-.03em}
+.stat span{color:var(--muted);font-size:13px}
 .wrap{overflow-x:auto}
-table{border-collapse:collapse;width:100%;font-size:13px}
-th,td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
-th{color:var(--muted);font-weight:600}
-td.n{font-variant-numeric:tabular-nums;text-align:right}
-a{color:var(--accent)}
-textarea{width:100%;min-height:150px;font:inherit;padding:10px;border:1px solid var(--line);border-radius:7px;background:var(--bg);color:var(--ink)}
-input{font:inherit;padding:7px 10px;border:1px solid var(--line);border-radius:7px;background:var(--bg);color:var(--ink);flex:1;min-width:180px}
-.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{padding:12px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+tr:last-child td{border-bottom:0}
+tbody tr{transition:background-color var(--fast) var(--ease)}
+tbody tr:hover{background:var(--sunken)}
+th{color:var(--muted);font-size:13px;font-weight:500}
+td.n{font-family:var(--mono);font-size:13px;font-variant-numeric:tabular-nums;text-align:right}
+td.n strong{font-weight:500;font-size:15px;color:var(--accent)}
+a{color:var(--accent);text-underline-offset:2px;transition:color var(--fast) var(--ease)}
+a:hover{color:var(--accent-hover)}
+textarea{display:block;width:100%;min-height:150px;max-height:380px;field-sizing:content;font:inherit;line-height:1.6;padding:12px 14px;border:1px solid var(--line);border-radius:7px;background:var(--sunken);color:var(--ink);resize:vertical;transition:border-color var(--fast) var(--ease),background-color var(--fast) var(--ease)}
+textarea:focus{background:var(--card);border-color:var(--line-strong)}
+textarea[readonly]{color:var(--muted)}
+input{font:inherit;font-size:14px;min-height:36px;padding:7px 12px;border:1px solid var(--line);border-radius:7px;background:var(--sunken);color:var(--ink);flex:1;min-width:180px;transition:border-color var(--fast) var(--ease),background-color var(--fast) var(--ease)}
+input:focus{background:var(--card);border-color:var(--line-strong)}
+input::placeholder{color:var(--muted)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:12px}
 .meta{color:var(--muted);font-size:13px}
-.notes{font-size:13px;margin:8px 0}
-.empty{color:var(--muted);padding:6px 0}
-#toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);max-width:min(560px,92vw);padding:10px 16px;border-radius:8px;background:var(--ink);color:var(--bg);font-weight:600;display:none}
+.notes{font-size:13px;line-height:1.6;color:var(--muted);margin:12px 0}
+.empty{color:var(--muted);padding:32px 0;margin:0;text-align:center}
+#toast{position:fixed;left:50%;bottom:24px;max-width:min(560px,calc(100vw - 32px));padding:10px 16px;border-radius:8px;background:var(--ink);color:var(--bg);font-size:14px;font-weight:500;opacity:0;visibility:hidden;transform:translate(-50%,8px);transition:opacity var(--fast) var(--ease),transform var(--slow) var(--ease),visibility var(--fast)}
+#toast.show{opacity:1;visibility:visible;transform:translate(-50%,0)}
+.enter>*,.enter .drafts>*,.fresh{animation:rise var(--slow) var(--ease) both}
+.enter>*:nth-child(2),.enter .drafts>*:nth-child(2){animation-delay:40ms}
+.enter>*:nth-child(n+3),.enter .drafts>*:nth-child(n+3){animation-delay:80ms}
+@keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes breathe{from{opacity:.35}to{opacity:1}}
+@media (max-width:640px){
+  header{padding:16px 16px 12px}nav{padding:0 16px}main{padding:16px 16px 56px}.card{padding:16px}.banner{padding:8px 16px}
+  button{min-height:44px}nav button{min-height:44px}input{min-height:44px}
+}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-delay:0ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 </style>
 </head>
 <body>
 <header>
   <div><h1>TrendPilot AI</h1><div class="sub">Independent interview prototype, not affiliated with Dots-In</div></div>
+  <span class="spacer"></span>
   <span class="tag warn">Dry run: nothing is really posted</span>
   <span class="tag" id="model"></span>
-  <span class="spacer"></span>
   <button class="primary" id="run">Run pipeline</button>
 </header>
 <div class="banner" id="banner" hidden></div>
-<nav role="tablist" id="tabs"></nav>
+<div class="bar"><nav role="tablist" id="tabs"><span id="tab-ind" aria-hidden="true"></span></nav></div>
 <main id="view"></main>
 <div id="toast" role="status" aria-live="polite"></div>
 <script>
@@ -77,7 +130,7 @@ const api = async (url, body) => {
   if (!r.ok) throw new Error(typeof data.detail === 'string' ? data.detail : 'Request failed');
   return data;
 };
-const toast = msg => { const t = document.getElementById('toast'); t.textContent = msg; t.style.display = 'block'; clearTimeout(toast.t); toast.t = setTimeout(() => t.style.display = 'none', 6000); };
+const toast = msg => { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('show'), 6000); };
 const link = url => /^https:\/\//.test(url) ? h('a', {href: url, target: '_blank', rel: 'noopener noreferrer'}, 'source') : 'no link';
 const STATUS = {needs_review: 'warn', approved: 'ok', published: 'ok', rejected: 'bad', done: 'ok', failed: 'bad', running: 'warn', qualified: 'ok'};
 const tag = s => h('span', {class: 'tag ' + (STATUS[s] || '')}, s.replace('_', ' '));
@@ -87,10 +140,14 @@ let tab = 'Pipeline', running = false;
 
 async function pipeline() {
   const [runs, log] = await Promise.all([api('/api/runs'), api('/api/audit')]);
-  const r = runs[0];
-  if (!r) return [h('div', {class: 'card'}, h('p', {class: 'empty'}, 'No runs yet. Press Run pipeline to start.'))];
+  const latest = runs[0];
+  if (!latest) return [h('div', {class: 'card'}, h('p', {class: 'empty'}, 'No runs yet. Press Run pipeline to start.'))];
+  // A run that stopped early has nothing to show, so keep the last run that did work and report the newer one in a note.
+  const r = latest.status === 'running' ? latest : runs.find(x => x.input_tokens > 0) || latest;
   const rows = log.filter(a => a.run_id === r.id);
   const started = new Set(rows.filter(a => a.action === 'step_start').map(a => a.target));
+  // The audit list is newest first, so the first started step is the one in progress.
+  const current = r.status === 'running' ? [...started][0] : null;
   const agents = {};
   for (const a of rows.filter(a => a.action === 'agent_run')) {
     const x = agents[a.actor] ||= {calls: 0, i: 0, o: 0, ms: 0};
@@ -99,17 +156,18 @@ async function pipeline() {
   const denied = rows.filter(a => !a.allowed && a.action !== 'finished').length;
   return [
     h('div', {class: 'card'},
-      h('div', {class: 'row', style: 'margin:0 0 12px'}, h('h2', {style: 'margin:0'}, `Run ${r.id}`), tag(r.status), h('span', {class: 'meta'}, r.message || 'Working...')),
-      h('div', {class: 'steps'}, STEPS.map(s => h('div', {class: 'step' + (started.has(s) ? ' done' : '')}, s))),
+      h('div', {class: 'row', style: 'margin:0 0 16px'}, h('h2', {style: 'margin:0'}, `Run ${r.id}`), tag(r.status), h('span', {class: 'meta'}, r.message || 'Working...')),
+      h('div', {class: 'steps'}, STEPS.map(s => h('div', {class: 'step' + (s === current ? ' active' : started.has(s) ? ' done' : '')}, s))),
       h('div', {class: 'stats'},
         h('div', {class: 'stat'}, h('b', {}, r.input_tokens.toLocaleString()), h('span', {}, 'input tokens')),
         h('div', {class: 'stat'}, h('b', {}, r.output_tokens.toLocaleString()), h('span', {}, 'output tokens')),
         h('div', {class: 'stat'}, h('b', {}, '$' + r.cost_usd.toFixed(4)), h('span', {}, 'estimated cost')),
-        h('div', {class: 'stat'}, h('b', {}, String(denied)), h('span', {}, 'harness blocks')))),
-    h('div', {class: 'card'}, h('h2', {}, 'Agents'), h('div', {class: 'wrap'}, h('table', {},
-      h('thead', {}, h('tr', {}, ['Agent', 'Calls', 'Input', 'Output', 'Seconds'].map(c => h('th', {}, c)))),
+        h('div', {class: 'stat'}, h('b', {}, String(denied)), h('span', {}, 'harness blocks'))),
+      r !== latest ? h('p', {class: 'meta', style: 'margin:16px 0 0'}, `Latest run ${latest.id}: ${latest.message}`) : null),
+    Object.keys(agents).length === 0 ? null : h('div', {class: 'card'}, h('h2', {}, 'Agents'), h('div', {class: 'wrap'}, h('table', {},
+      h('thead', {}, h('tr', {}, ['Agent', 'Calls', 'Input', 'Output', 'Seconds'].map((c, i) => h('th', i ? {style: 'text-align:right'} : {}, c)))),
       h('tbody', {}, Object.entries(agents).map(([n, x]) => h('tr', {}, h('td', {}, n), h('td', {class: 'n'}, String(x.calls)), h('td', {class: 'n'}, x.i.toLocaleString()), h('td', {class: 'n'}, x.o.toLocaleString()), h('td', {class: 'n'}, (x.ms / 1000).toFixed(1))))))))
-  ];
+  ].filter(Boolean);
 }
 
 async function trends() {
@@ -117,11 +175,11 @@ async function trends() {
   if (!list.length) return [h('div', {class: 'card'}, h('p', {class: 'empty'}, 'No scored trends yet.'))];
   list.sort((a, b) => b.run_id - a.run_id || b.score - a.score);
   return [h('div', {class: 'card'}, h('h2', {}, 'Scored trends'),
-    h('p', {class: 'meta'}, 'Score = 0.30 Relevance + 0.25 Brand fit + 0.20 Momentum + 0.15 Evidence + 0.10 Content. Momentum is computed by code from real engagement, the rest by the Relevance Strategist.'),
+    h('p', {class: 'meta', style: 'margin:0 0 12px'}, 'Score = 0.30 Relevance + 0.25 Brand fit + 0.20 Momentum + 0.15 Evidence + 0.10 Content. Momentum is computed by code from real engagement, the rest by the Relevance Strategist.'),
     h('div', {class: 'wrap'}, h('table', {},
-      h('thead', {}, h('tr', {}, ['Topic', 'Score', 'R', 'B', 'M', 'E', 'C', 'Status', ''].map(c => h('th', {}, c)))),
+      h('thead', {}, h('tr', {}, ['Topic', 'Score', 'R', 'B', 'M', 'E', 'C', 'Status', ''].map((c, i) => h('th', i > 0 && i < 7 ? {style: 'text-align:right'} : {}, c)))),
       h('tbody', {}, list.map(t => h('tr', {},
-        h('td', {}, h('strong', {}, t.topic || t.title), h('div', {class: 'meta'}, `${t.pillar} · ${t.source}`), h('div', {class: 'meta'}, t.reason)),
+        h('td', {}, h('strong', {style: 'font-weight:500'}, t.topic || t.title), h('div', {class: 'meta'}, `${t.pillar} · ${t.source}`), h('div', {class: 'meta'}, t.reason)),
         h('td', {class: 'n'}, h('strong', {}, t.score.toFixed(1))),
         [t.relevance, t.brand_fit, t.momentum, t.evidence, t.content_potential].map(v => h('td', {class: 'n'}, String(v))),
         h('td', {}, tag(t.status)), h('td', {}, link(t.source_url)))))))) ];
@@ -129,8 +187,12 @@ async function trends() {
 
 // Only the acted-on card is redrawn, so unsaved text in other cards survives. A blocked action keeps this card's text too.
 async function cardAction(card, id, fn, done) {
-  try { const r = await fn(); toast(done(r)); card.replaceWith(draftCard((await api('/api/content')).find(x => x.id === id))); }
-  catch (e) { toast('Blocked: ' + e.message); }
+  try {
+    const r = await fn(); toast(done(r));
+    const fresh = draftCard((await api('/api/content')).find(x => x.id === id));
+    fresh.classList.add('fresh');
+    card.replaceWith(fresh);
+  } catch (e) { toast('Blocked: ' + e.message); }
 }
 
 function draftCard(d) {
@@ -142,43 +204,64 @@ function draftCard(d) {
   const edit = () => box.value !== d.body ? api(`/api/content/${d.id}/edit`, {body: box.value}) : Promise.resolve();
   const act = (fn, done) => cardAction(card, d.id, fn, done);
   const card = h('div', {class: 'card'},
-    h('div', {class: 'row', style: 'margin:0 0 6px'}, h('h2', {style: 'margin:0;text-transform:capitalize'}, d.platform), tag(d.status),
+    h('div', {class: 'row', style: 'margin:0 0 8px'}, h('h2', {style: 'margin:0'}, {linkedin: 'LinkedIn', instagram: 'Instagram'}[d.platform]), tag(d.status),
       h('span', {class: 'tag ' + (d.review_passed ? 'ok' : 'bad')}, d.review_passed ? `Review passed ${d.review_score}` : 'Flagged by review'), d.edited ? h('span', {class: 'tag'}, 'Edited') : null),
     h('div', {class: 'meta'}, `${d.topic} · ${d.pillar} · score ${d.score.toFixed(1)} · `, link(d.source_url)),
     h('p', {class: 'notes'}, d.review_notes || ''),
     box,
     h('div', {class: 'row'},
       open ? h('button', {onclick: () => act(() => edit().then(() => api(`/api/content/${d.id}/approve`, {reviewer: 'bhuvan'})), () => 'Approved')}, 'Approve') : null,
-      d.status !== 'published' ? h('button', {class: 'primary', onclick: () => act(() => api(`/api/publish/${d.id}`, {}), p => `Dry run recorded as ${p.external_id}. Nothing was posted.`)}, 'Publish') : null,
-      open ? reason : null,
-      open ? h('button', {onclick: () => act(() => api(`/api/content/${d.id}/reject`, {reviewer: 'bhuvan', comment: reason.value}), () => 'Rejected and saved to learning memory')}, 'Reject') : null));
+      d.status !== 'published' ? h('button', {class: 'primary', onclick: () => act(() => api(`/api/publish/${d.id}`, {}), p => `Dry run recorded as ${p.external_id}. Nothing was posted.`)}, 'Publish') : null),
+    open ? h('div', {class: 'row'}, reason, h('button', {onclick: () => act(() => api(`/api/content/${d.id}/reject`, {reviewer: 'bhuvan', comment: reason.value}), () => 'Rejected and saved to learning memory')}, 'Reject')) : null);
   return card;
 }
 
 async function content() {
   const list = await api('/api/content');
-  return list.length ? list.map(draftCard) : [h('div', {class: 'card'}, h('p', {class: 'empty'}, 'No drafts yet.'))];
+  return list.length ? [h('div', {class: 'drafts'}, list.map(draftCard))] : [h('div', {class: 'card'}, h('p', {class: 'empty'}, 'No drafts yet.'))];
 }
 
 async function audit() {
   const list = await api('/api/audit');
   return [h('div', {class: 'card'}, h('h2', {}, 'Audit trail'), h('div', {class: 'wrap'}, h('table', {},
     h('thead', {}, h('tr', {}, ['Time', 'Actor', 'Action', 'Target', 'Result', 'Detail'].map(c => h('th', {}, c)))),
-    h('tbody', {}, list.map(a => h('tr', {}, h('td', {}, a.ts.slice(11, 19)), h('td', {}, a.actor), h('td', {}, a.action), h('td', {}, a.target),
+    h('tbody', {}, list.map(a => h('tr', {}, h('td', {style: 'font-family:var(--mono);font-size:13px'}, a.ts.slice(11, 19)), h('td', {}, a.actor), h('td', {}, a.action), h('td', {}, a.target),
       h('td', {}, h('span', {class: 'tag ' + (a.allowed ? 'ok' : 'bad')}, a.allowed ? 'allowed' : 'blocked')), h('td', {class: 'meta'}, a.detail))))))) ];
 }
 
 async function memory() {
   const m = await api('/api/memory');
-  return [h('div', {class: 'card'}, h('h2', {}, 'Learning memory'), h('p', {style: 'white-space:pre-wrap'}, m.learnings)),
-    h('div', {class: 'card'}, h('h2', {}, 'Brand memory'), h('p', {class: 'meta'}, "Public statements from the company's website, unverified and not reviewed by Dots-In."),
-      h('div', {class: 'wrap'}, h('table', {}, h('tbody', {}, m.brand.map(b => h('tr', {}, h('td', {}, h('strong', {}, b.pillar)), h('td', {}, b.content))))))) ];
+  return [h('div', {class: 'card'}, h('h2', {}, 'Learning memory'), h('p', {style: 'white-space:pre-wrap;margin:0'}, m.learnings)),
+    h('div', {class: 'card'}, h('h2', {}, 'Brand memory'), h('p', {class: 'meta', style: 'margin:0 0 8px'}, "Public statements from the company's website, unverified and not reviewed by Dots-In."),
+      h('div', {class: 'wrap'}, h('table', {}, h('tbody', {}, m.brand.map(b => h('tr', {}, h('td', {style: 'white-space:nowrap'}, h('strong', {style: 'font-weight:500'}, b.pillar)), h('td', {}, b.content))))))) ];
 }
 
-async function render() {
-  const tabs = document.getElementById('tabs');
-  tabs.replaceChildren(...Object.keys(TABS).map(t => h('button', {role: 'tab', 'aria-selected': String(t === tab), onclick: () => { tab = t; render(); }}, t)));
-  try { document.getElementById('view').replaceChildren(...await TABS[tab]()); } catch (e) { toast(e.message); }
+const tabs = document.getElementById('tabs');
+const indicator = document.getElementById('tab-ind');
+const moveIndicator = () => {
+  const b = tabs.querySelector('[aria-selected=true]');
+  indicator.style.width = b.offsetWidth + 'px';
+  indicator.style.transform = `translateX(${b.offsetLeft}px)`;
+};
+function select(name) {
+  tab = name;
+  for (const b of tabs.querySelectorAll('button')) b.setAttribute('aria-selected', String(b.textContent === name));
+  moveIndicator();
+  render(true);
+}
+tabs.prepend(...Object.keys(TABS).map(t => h('button', {role: 'tab', 'aria-selected': String(t === tab), onclick: () => select(t)}, t)));
+
+let renderSeq = 0;
+// Entrance motion runs only when asked, so the live refresh during a run stays still.
+async function render(animate) {
+  const seq = ++renderSeq, view = document.getElementById('view');
+  try {
+    const kids = await TABS[tab]();
+    if (seq !== renderSeq) return;  // a newer tab choice has already taken over
+    view.classList.remove('enter');
+    if (animate) { void view.offsetWidth; view.classList.add('enter'); }
+    view.replaceChildren(...kids);
+  } catch (e) { toast(e.message); }
 }
 
 async function poll() {
@@ -191,15 +274,17 @@ async function poll() {
   document.getElementById('run').textContent = s.running ? 'Running...' : 'Run pipeline';
   const finished = running && !s.running;
   running = s.running;
-  if (finished) { toast('Run finished'); if (!document.querySelector('main [data-dirty]')) render(); }
+  if (finished) { toast('Run finished'); if (!document.querySelector('main [data-dirty]')) render(true); }
   // Only live views refresh during a run, so a draft being edited is never overwritten.
   else if (running && (tab === 'Pipeline' || tab === 'Audit')) render();
 }
 
 document.getElementById('run').addEventListener('click', async () => {
-  try { await api('/api/pipeline/run', {}); tab = 'Pipeline'; running = true; render(); poll(); } catch (e) { toast(e.message); }
+  try { await api('/api/pipeline/run', {}); running = true; select('Pipeline'); poll().catch(() => {}); } catch (e) { toast(e.message); }
 });
-render(); poll(); setInterval(poll, 1500);
+addEventListener('resize', moveIndicator);
+document.fonts.ready.then(moveIndicator);
+moveIndicator(); render(true); poll().catch(() => {}); setInterval(() => poll().catch(() => {}), 1500);
 </script>
 </body>
 </html>

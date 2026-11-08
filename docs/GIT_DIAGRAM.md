@@ -38,4 +38,8 @@ gitGraph
     commit id: "docs: measured results"
     checkout main
     merge fix/review-findings id: "merge: review findings"
+    branch style/dashboard-polish
+    commit id: "style(ui): warm paper redesign"
+    checkout main
+    merge style/dashboard-polish id: "merge: dashboard polish"
 ```
