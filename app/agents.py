@@ -6,6 +6,7 @@ from types import SimpleNamespace
 
 from agno.agent import Agent
 from agno.models.anthropic import Claude
+from agno.models.nvidia import Nvidia
 from agno.models.openrouter import OpenRouter
 from agno.skills import LocalSkills, Skills
 

@@ -84,6 +84,17 @@ def test_openrouter_needs_its_own_key(tmp_path, monkeypatch):
     assert r.status_code == 400 and "OPENROUTER_API_KEY" in r.json()["detail"]
 
 
+def test_nvidia_needs_its_own_key_and_has_a_price_entry(tmp_path, monkeypatch):
+    monkeypatch.setenv("MODEL_PROVIDER", "nvidia")
+    monkeypatch.setenv("MODEL_ID", "nvidia/nemotron-3-ultra-550b-a55b")
+    monkeypatch.delenv("NVIDIA_API_KEY", raising=False)
+    monkeypatch.setattr(main, "load_dotenv", lambda *a, **k: None)
+    with TestClient(main.create_app(tmp_path / "t.db")) as c:
+        r = c.post("/api/pipeline/run", json={})
+    assert r.status_code == 400 and "NVIDIA_API_KEY" in r.json()["detail"]
+    assert main.is_priced("nvidia/nemotron-3-ultra-550b-a55b")
+
+
 def test_interrupted_run_is_closed_on_startup(tmp_path, monkeypatch):
     monkeypatch.setenv("MODEL_PROVIDER", "mock")
     path = tmp_path / "t.db"
