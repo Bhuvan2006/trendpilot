@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "trendpilot-mock",
+      "runtimeExecutable": "powershell",
+      "runtimeArgs": ["-NoProfile", "-Command", "$env:MODEL_PROVIDER='mock'; $env:TRENDPILOT_DB='mock.db'; .\\.venv\\Scripts\\python.exe -m app.main"],
+      "port": 8000
+    }
+  ]
+}
