@@ -99,6 +99,31 @@ def test_accepts_fenced_json_and_parsed_models(tmp_path):
     assert h.run_agent(FakeAgent([Out(answer="b")]), "go", Out).answer == "b"
 
 
+def test_accepts_json_surrounded_by_prose(tmp_path):
+    h = make_harness(tmp_path)
+    reply = 'Here is the result:\n{"answer": "a"}\nLet me know if you need more.'
+    assert h.run_agent(FakeAgent([reply]), "go", Out).answer == "a"
+
+
+def test_models_without_native_output_are_not_forced_into_json_mode(tmp_path):
+    # Forced JSON mode stops a model from calling tools, so it can never load its skill.
+    from app.agents import build_agents
+    from app.memory import Memory
+    h = make_harness(tmp_path)
+    scout = build_agents(h, Memory(h.path), "nvidia", "nvidia/nemotron-3-ultra-550b-a55b", [])["Trend Scout"]
+    assert scout.output_schema is None
+    assert any("topics" in line for line in scout.instructions)
+
+
+def test_models_with_native_output_keep_the_schema(tmp_path):
+    from app.agents import build_agents
+    from app.memory import Memory
+    from app.schemas import ScoutOutput
+    h = make_harness(tmp_path)
+    scout = build_agents(h, Memory(h.path), "anthropic", "claude-sonnet-5-5", [])["Trend Scout"]
+    assert scout.output_schema is ScoutOutput
+
+
 def test_gives_up_after_bounded_attempts(tmp_path):
     h = make_harness(tmp_path)
     agent = FakeAgent(["bad", "still bad", "never reached"])

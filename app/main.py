@@ -15,7 +15,7 @@ from app.memory import Memory
 from app.publishing import GateError
 
 ROOT = Path(__file__).parent.parent
-KEY_ENV = {"anthropic": "ANTHROPIC_API_KEY", "openrouter": "OPENROUTER_API_KEY"}
+KEY_ENV = {"anthropic": "ANTHROPIC_API_KEY", "openrouter": "OPENROUTER_API_KEY", "nvidia": "NVIDIA_API_KEY"}
 
 
 class Empty(BaseModel):

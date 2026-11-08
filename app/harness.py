@@ -1,6 +1,5 @@
 """The control layer around the agents: what they may call, how often, what they must return and what they may spend."""
 import json
-import re
 import time
 
 from pydantic import BaseModel, ValidationError
@@ -17,7 +16,8 @@ POLICY = {
 MAX_TOOL_CALLS = 6
 MAX_ATTEMPTS = 2
 # USD per million tokens, (input, output). Cached reads are charged at the full rate, so cost is a safe overestimate.
-PRICES = {"claude-sonnet-5-5": (2.0, 10.0), "claude-haiku-5-5": (0.10, 0.50), "claude-opus-5-5": (4.0, 20.0), "mock": (0.0, 0.0)}
+PRICES = {"claude-sonnet-5-5": (2.0, 10.0), "claude-haiku-5-5": (0.10, 0.50), "claude-opus-5-5": (4.0, 20.0), "mock": (0.0, 0.0),
+          "nvidia/nemotron-3-ultra-550b-a55b": (0.0, 0.0)}  # NVIDIA's hosted trial endpoint bills no tokens; the cap has no effect there
 
 
 def is_priced(model_id: str) -> bool:
@@ -80,8 +80,8 @@ class Harness:
     def _parse(content, schema):
         if isinstance(content, BaseModel):
             return schema.model_validate(content.model_dump())
-        text = re.sub(r"^```(?:json)?\s*|\s*```$", "", str(content).strip())
-        return schema.model_validate_json(text)
+        text = str(content)  # models may wrap the JSON in code fences or prose
+        return schema.model_validate_json(text[text.find("{"):text.rfind("}") + 1])
 
     def run_agent(self, agent, prompt: str, schema):
         self.tool_calls[agent.name] = 0
