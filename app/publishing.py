@@ -92,7 +92,7 @@ def publish(path, draft_id, adapter=None) -> dict:
                 c.execute("INSERT INTO posts(draft_id, platform, mode, status, ts) VALUES(?,?,?,?,?)",
                           (draft_id, d["platform"], mode, "pending", db.now()))
     if status:
-        _deny(path, "publisher", "publish", draft_id, f"blocked: draft is {status}, a human must approve it first")
+        _deny(path, "publisher", "publish", draft_id, f"this draft is {status.replace('_', ' ')}, a human must approve it first")
     try:
         external_id = adapter.publish(dict(d))
     except Exception as e:

@@ -79,6 +79,13 @@ def run_pipeline(path, provider, model_id, max_cost_usd, top_n=2, collectors=Non
             return f"{len(found)} items from {name}"
         return fn
 
+    def store(found):
+        # The upsert moves an item left by a failed run onto this run, so it counts as seen once this run finishes.
+        with db.connect(path) as c:
+            c.executemany("INSERT INTO trends(run_id, source, source_url, title, summary, points, comments, retrieved_at, momentum) VALUES(?,?,?,?,?,?,?,?,?)"
+                          " ON CONFLICT(source_url) DO UPDATE SET run_id=excluded.run_id, points=excluded.points, comments=excluded.comments, retrieved_at=excluded.retrieved_at, momentum=excluded.momentum",
+                          [(run_id, i["source"], i["url"], i["title"], i["summary"], i["points"], i["comments"], db.now(), sources.momentum(i)) for i in found])
+
     def scout():
         if not items and len(source_errors) == len(collectors):
             raise RuntimeError("All trend sources failed, check the network and try again")
@@ -89,15 +96,11 @@ def run_pipeline(path, provider, model_id, max_cost_usd, top_n=2, collectors=Non
             return state["stop"]
         fresh.sort(key=sources.momentum, reverse=True)
         fresh = fresh[:MAX_ITEMS_FOR_SCOUT]
-        with db.connect(path) as c:
-            c.executemany("INSERT OR IGNORE INTO trends(run_id, source, source_url, title, summary, points, comments, retrieved_at, momentum) VALUES(?,?,?,?,?,?,?,?,?)",
-                          [(run_id, i["source"], i["url"], i["title"], i["summary"], i["points"], i["comments"], db.now(), sources.momentum(i)) for i in fresh])
+        store(fresh)
         out = harness.run_agent(team["Trend Scout"], "Select the topics worth considering from these items.\n" + _data(fresh), ScoutOutput)
         # Items found by the agent's own search count as fetched, and must be stored before they can be scored.
         extra = [i for i in tool_items if i["url"] not in seen]
-        with db.connect(path) as c:
-            c.executemany("INSERT OR IGNORE INTO trends(run_id, source, source_url, title, summary, points, comments, retrieved_at, momentum) VALUES(?,?,?,?,?,?,?,?,?)",
-                          [(run_id, i["source"], i["url"], i["title"], i["summary"], i["points"], i["comments"], db.now(), sources.momentum(i)) for i in extra])
+        store(extra)
         fetched = {i["url"] for i in fresh + extra}
         for t in out.topics:
             if t.source_url in fetched:

@@ -61,6 +61,16 @@ def test_second_run_skips_seen_urls_without_calling_agents(tmp_path):
     assert len(rows(path, "SELECT * FROM audit WHERE action='agent_run'")) == before
 
 
+def test_failed_run_does_not_mark_items_as_seen(tmp_path):
+    path = tmp_path / "t.db"
+    same = {"hackernews": lambda: [item(1)], "arxiv": lambda: []}
+    first = run_pipeline(path, "mock", "mock", 0.0, collectors=same)
+    assert rows(path, f"SELECT status FROM runs WHERE id = {first}")[0]["status"] == "failed"
+    second = run_pipeline(path, "mock", "mock", 1.0, collectors=same)
+    assert rows(path, f"SELECT status, message FROM runs WHERE id = {second}")[0]["message"].endswith("ready for review")
+    assert len(rows(path, "SELECT * FROM trends")) == 1
+
+
 def test_one_source_failing_still_completes(tmp_path):
     def down():
         raise ConnectionError("arXiv is down")

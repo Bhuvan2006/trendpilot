@@ -115,7 +115,7 @@ async function pipeline() {
 async function trends() {
   const list = await api('/api/trends');
   if (!list.length) return [h('div', {class: 'card'}, h('p', {class: 'empty'}, 'No scored trends yet.'))];
-  list.sort((a, b) => b.id - a.id || b.score - a.score);
+  list.sort((a, b) => b.run_id - a.run_id || b.score - a.score);
   return [h('div', {class: 'card'}, h('h2', {}, 'Scored trends'),
     h('p', {class: 'meta'}, 'Score = 0.30 Relevance + 0.25 Brand fit + 0.20 Momentum + 0.15 Evidence + 0.10 Content. Momentum is computed by code from real engagement, the rest by the Relevance Strategist.'),
     h('div', {class: 'wrap'}, h('table', {},
