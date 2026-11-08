@@ -97,17 +97,22 @@ def build_agents(harness, memory, provider: str, model_id: str, found_items: lis
     if provider == "mock":
         return {name: MockAgent(name) for name in SPEC}
     tools = build_tools(memory, found_items)
+    model = make_model(provider, model_id)
+    # Without native structured output Agno forces JSON mode from the first message, which stops the model calling
+    # tools. Those models get the format as an instruction instead, and the harness validates the final answer.
+    native = model.supports_native_structured_outputs
     return {
         name: Agent(
             name=name,
-            model=make_model(provider, model_id),
+            model=model,
             description=role,
-            instructions=[f"First call get_skill_instructions for the '{skill}' skill and follow it.", UNTRUSTED],
+            instructions=[f"First call get_skill_instructions for the '{skill}' skill and follow it.", UNTRUSTED]
+            + ([] if native else [f"When you have finished using tools, reply with only one JSON object and no other text. It must match this JSON schema: {json.dumps(schema.model_json_schema())}"]),
             skills=Skills(loaders=[LocalSkills(str(SKILLS_DIR / skill))]),
             tools=tools[name],
             tool_hooks=[harness.tool_hook(name)],
             tool_call_limit=8,
-            output_schema=schema,
+            output_schema=schema if native else None,
             telemetry=False,
         )
         for name, (skill, schema, role) in SPEC.items()

@@ -1,6 +1,5 @@
 """The control layer around the agents: what they may call, how often, what they must return and what they may spend."""
 import json
-import re
 import time
 
 from pydantic import BaseModel, ValidationError
@@ -81,8 +80,8 @@ class Harness:
     def _parse(content, schema):
         if isinstance(content, BaseModel):
             return schema.model_validate(content.model_dump())
-        text = re.sub(r"^```(?:json)?\s*|\s*```$", "", str(content).strip())
-        return schema.model_validate_json(text)
+        text = str(content)  # models may wrap the JSON in code fences or prose
+        return schema.model_validate_json(text[text.find("{"):text.rfind("}") + 1])
 
     def run_agent(self, agent, prompt: str, schema):
         self.tool_calls[agent.name] = 0
