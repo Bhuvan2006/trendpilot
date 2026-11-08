@@ -17,7 +17,8 @@ POLICY = {
 MAX_TOOL_CALLS = 6
 MAX_ATTEMPTS = 2
 # USD per million tokens, (input, output). Cached reads are charged at the full rate, so cost is a safe overestimate.
-PRICES = {"claude-sonnet-5-5": (2.0, 10.0), "claude-haiku-5-5": (0.10, 0.50), "claude-opus-5-5": (4.0, 20.0), "mock": (0.0, 0.0)}
+PRICES = {"claude-sonnet-5-5": (2.0, 10.0), "claude-haiku-5-5": (0.10, 0.50), "claude-opus-5-5": (4.0, 20.0), "mock": (0.0, 0.0),
+          "nvidia/nemotron-3-ultra-550b-a55b": (0.0, 0.0)}  # NVIDIA's hosted trial endpoint bills no tokens; the cap has no effect there
 
 
 def is_priced(model_id: str) -> bool:

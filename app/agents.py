@@ -88,6 +88,8 @@ def make_model(provider: str, model_id: str):
     # No custom temperature, because Sonnet 5.5 rejects one. The timeout keeps one hung call from stalling a run.
     if provider == "openrouter":
         return OpenRouter(id=model_id, max_tokens=8000, timeout=120)
+    if provider == "nvidia":  # the hosted endpoint limits requests per minute, so back off on 429s
+        return Nvidia(id=model_id, max_tokens=8000, timeout=120, retries=3, delay_between_retries=5, exponential_backoff=True)
     return Claude(id=model_id, max_tokens=8000, timeout=120)
 
 
