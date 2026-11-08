@@ -179,7 +179,7 @@ async function poll() {
   document.getElementById('model').textContent = s.provider === 'mock' ? 'Mock mode' : s.model;
   const banner = document.getElementById('banner');
   banner.hidden = s.provider !== 'mock' && s.key_configured;
-  banner.textContent = s.provider === 'mock' ? 'Mock mode: all trends, scores and drafts on this page are canned data.' : 'ANTHROPIC_API_KEY is missing from trendpilot/.env';
+  banner.textContent = s.provider === 'mock' ? 'Mock mode: all trends, scores and drafts on this page are canned data.' : `${s.key_name} is missing from trendpilot/.env`;
   document.getElementById('run').disabled = s.running;
   document.getElementById('run').textContent = s.running ? 'Running...' : 'Run pipeline';
   const finished = running && !s.running;

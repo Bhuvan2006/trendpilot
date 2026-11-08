@@ -20,6 +20,10 @@ MAX_ATTEMPTS = 2
 PRICES = {"claude-sonnet-5-5": (2.0, 10.0), "claude-haiku-5-5": (0.10, 0.50), "claude-opus-5-5": (4.0, 20.0), "mock": (0.0, 0.0)}
 
 
+def is_priced(model_id: str) -> bool:
+    return model_id in PRICES or model_id.endswith(":free")  # OpenRouter marks no-cost models with this suffix
+
+
 class BudgetExceeded(Exception):
     pass
 
@@ -30,7 +34,7 @@ class StepFailed(Exception):
 
 class Harness:
     def __init__(self, path, run_id, max_cost_usd, model_id, backoff_s=2.0):
-        if model_id not in PRICES:
+        if not is_priced(model_id):
             raise ValueError(f"no price known for {model_id}, so the spend cap cannot work. Add it to PRICES.")
         self.path, self.run_id, self.max_cost_usd, self.model_id, self.backoff_s = path, run_id, max_cost_usd, model_id, backoff_s
         self.cost_usd, self.input_tokens, self.output_tokens = 0.0, 0, 0
@@ -62,7 +66,7 @@ class Harness:
     def _record(self, agent_name, out, started, attempt):
         metrics = getattr(out, "metrics", None)
         i, o = (getattr(metrics, "input_tokens", 0) or 0), (getattr(metrics, "output_tokens", 0) or 0)
-        input_price, output_price = PRICES[self.model_id]
+        input_price, output_price = PRICES.get(self.model_id, (0.0, 0.0))  # only ":free" models lack an entry
         self.input_tokens += i
         self.output_tokens += o
         self.cost_usd += (i * input_price + o * output_price) / 1_000_000

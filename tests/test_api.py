@@ -72,6 +72,18 @@ def test_missing_key_gives_clear_error(tmp_path, monkeypatch):
     assert r.status_code == 400 and "ANTHROPIC_API_KEY" in r.json()["detail"]
 
 
+def test_openrouter_needs_its_own_key(tmp_path, monkeypatch):
+    monkeypatch.setenv("MODEL_PROVIDER", "openrouter")
+    monkeypatch.setenv("MODEL_ID", "nvidia/some-model:free")
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "set-but-irrelevant")
+    monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
+    monkeypatch.setattr(main, "load_dotenv", lambda *a, **k: None)
+    with TestClient(main.create_app(tmp_path / "t.db")) as c:
+        assert c.get("/api/status").json()["key_configured"] is False
+        r = c.post("/api/pipeline/run", json={})
+    assert r.status_code == 400 and "OPENROUTER_API_KEY" in r.json()["detail"]
+
+
 def test_interrupted_run_is_closed_on_startup(tmp_path, monkeypatch):
     monkeypatch.setenv("MODEL_PROVIDER", "mock")
     path = tmp_path / "t.db"
