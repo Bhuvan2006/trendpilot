@@ -74,10 +74,13 @@ def create_app(db_path=None) -> FastAPI:
             raise HTTPException(400, f"Add {KEY_ENV[provider]} to trendpilot/.env and restart the server")
         if not is_priced(model):
             raise HTTPException(400, f"No price configured for {model}, so the spend cap cannot work")
+        try:
+            max_cost = float(os.getenv("MAX_COST_USD", "1.00"))
+        except ValueError:
+            raise HTTPException(400, "MAX_COST_USD in trendpilot/.env must be a plain number")
         if not run_lock.acquire(blocking=False):
             raise HTTPException(409, "A run is already in progress")
         run_id = pipeline.create_run(path, provider, model)
-        max_cost = float(os.getenv("MAX_COST_USD", "1.00"))
 
         def work():
             try:

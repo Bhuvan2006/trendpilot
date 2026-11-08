@@ -78,4 +78,18 @@ Decisions made while executing are listed here with their cost if wrong.
 - Seen URLs count only from finished runs, found when a failed run hid its items from the retry. Cost if wrong: a few repeated items.
 - Rulings are kept in this file instead of the skill's ledger script, so they stay in git. Cost if wrong: none for the code.
 - Added `TRENDPILOT_DB` so mock data never mixes with real data. Cost if wrong: one environment variable.
-- Live model run is still outstanding, because accounts had no credit or free quota. Cost if wrong: prompts and structured output are unproven on a real model.
+- Added NVIDIA's hosted model as the working default, after Anthropic had no credit and OpenRouter had no free quota. Cost if wrong: one setting change.
+- JSON mode is off for models without native structured output, because it stopped them calling tools. The harness validates their final answer instead. Cost if wrong: an extra retry on malformed output.
+- A `pending` post blocks further publishing, so a crash mid-publish needs a manual check. Cost if wrong: one stuck draft, which is safer than a double post.
+- A model that ignores tool denials gets 3 more denials before its run is stopped. Cost if wrong: a few extra requests.
+
+## Deferred minors from the final review
+
+- The guard matches numbers as substrings, so "5%" passes on "95%", and "40 percent" fails against "40%".
+- Invented URLs inside a draft body are not checked.
+- Learnings are not scoped by pillar.
+- A run with one source down still reports plain success. The Audit tab shows the source error.
+- A tool that raises leaves no audit row.
+- Publishing does not rerun the guard, which already ran at approval on the same locked text.
+- Retries of an agent share its tool count.
+- Rejecting with an empty reason saves nothing, though the message says it was saved.

@@ -23,6 +23,11 @@ SPEC = {
 }
 
 
+def untrusted(obj) -> str:
+    # Escaping "<" keeps source text from closing the delimiter, and stays valid JSON.
+    return "<untrusted_source_data>" + json.dumps(obj).replace("<", "\\u003c") + "</untrusted_source_data>"
+
+
 def build_tools(memory, found_items: list) -> dict:
     def search_hackernews(query: str) -> str:
         """Search recent Hacker News stories.
@@ -32,7 +37,7 @@ def build_tools(memory, found_items: list) -> dict:
         """
         items = sources.fetch_hn(query)
         found_items.extend(items)
-        return json.dumps(items)
+        return untrusted(items)
 
     def search_brand_knowledge(query: str) -> str:
         """Search public statements Dots-In has made about itself, its pillars and tone.

@@ -12,6 +12,6 @@ def check_draft(body: str, platform: str, allowed_text: str) -> list[str]:
     if len(body) > LIMITS[platform]:
         problems.append(f"length {len(body)} exceeds {platform} limit {LIMITS[platform]}")
     lowered = body.lower().replace("’", "'")
-    problems += [f"banned phrase: {p}" for p in BANNED if p in lowered]
+    problems += [f"banned phrase: {p}" for p in BANNED if re.search(rf"\b{re.escape(p)}", lowered)]  # word start, so "secure" is not "cure"
     problems += [f"unsupported number: {m.group(0)}" for m in NUMERIC_CLAIM.finditer(body) if m.group(0).lower() not in allowed_text.lower()]
     return problems

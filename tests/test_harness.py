@@ -2,12 +2,13 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
+from agno.exceptions import StopAgentRun
 from agno.skills import validate_skill_directory
 from agno.tools.function import Function, FunctionCall
 from pydantic import BaseModel
 
 from app import db
-from app.harness import MAX_TOOL_CALLS, BudgetExceeded, Harness, StepFailed
+from app.harness import GRACE_DENIALS, MAX_TOOL_CALLS, BudgetExceeded, Harness, StepFailed
 from app.schemas import score
 
 
@@ -84,6 +85,15 @@ def test_tool_call_cap_denies_extra_calls(tmp_path):
     hook = h.tool_hook("Trend Scout")
     results = [hook("search_hackernews", lambda: "ok", {}) for _ in range(MAX_TOOL_CALLS + 1)]
     assert results[MAX_TOOL_CALLS - 1] == "ok" and "DENIED" in results[MAX_TOOL_CALLS]
+
+
+def test_model_ignoring_denials_is_stopped(tmp_path):
+    h = make_harness(tmp_path)
+    hook = h.tool_hook("Trend Scout")
+    for _ in range(MAX_TOOL_CALLS + GRACE_DENIALS):
+        hook("search_hackernews", lambda: "ok", {})
+    with pytest.raises(StopAgentRun):
+        hook("search_hackernews", lambda: "ok", {})
 
 
 def test_invalid_output_retries_with_the_error(tmp_path):
