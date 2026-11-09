@@ -97,7 +97,9 @@ def _execute(path, provider, model_id, max_cost_usd, top_n, collectors, run_id) 
         seen = memory.seen_urls()
         fresh = list({i["url"]: i for i in items if i["url"] not in seen}.values())
         if not fresh:
-            state["stop"] = "Nothing new since the last run"
+            checked = f"all {len(items)} items checked were already processed" if items else "the sources returned no items"
+            unreachable = f" Could not reach: {', '.join(source_errors)}." if source_errors else ""
+            state["stop"] = f"Nothing new: {checked}, so no drafts were written.{unreachable}"
             return state["stop"]
         fresh.sort(key=sources.momentum, reverse=True)
         fresh = fresh[:MAX_ITEMS_FOR_SCOUT]

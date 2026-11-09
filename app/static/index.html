@@ -85,6 +85,7 @@ input::placeholder{color:var(--muted)}
 .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:12px}
 .meta{color:var(--muted);font-size:13px}
 .notes{font-size:13px;line-height:1.6;color:var(--muted);margin:12px 0}
+.notice{margin:0 0 16px;padding:12px 14px;border-radius:8px;background:var(--sunken);font-size:13px;line-height:1.6}
 .empty{color:var(--muted);padding:32px 0;margin:0;text-align:center}
 #toast{position:fixed;left:50%;bottom:24px;max-width:min(560px,calc(100vw - 32px));padding:10px 16px;border-radius:8px;background:var(--ink);color:var(--bg);font-size:14px;font-weight:500;opacity:0;visibility:hidden;transform:translate(-50%,8px);transition:opacity var(--fast) var(--ease),transform var(--slow) var(--ease),visibility var(--fast)}
 #toast.show{opacity:1;visibility:visible;transform:translate(-50%,0)}
@@ -156,14 +157,14 @@ async function pipeline() {
   const denied = rows.filter(a => !a.allowed && a.action !== 'finished').length;
   return [
     h('div', {class: 'card'},
+      r !== latest ? h('p', {class: 'notice'}, h('b', {}, `Latest run ${latest.id}. `), latest.message, ` Below is run ${r.id}, the last run that used the agents.`) : null,
       h('div', {class: 'row', style: 'margin:0 0 16px'}, h('h2', {style: 'margin:0'}, `Run ${r.id}`), tag(r.status), h('span', {class: 'meta'}, r.message || 'Working...')),
       h('div', {class: 'steps'}, STEPS.map(s => h('div', {class: 'step' + (s === current ? ' active' : started.has(s) ? ' done' : '')}, s))),
       h('div', {class: 'stats'},
         h('div', {class: 'stat'}, h('b', {}, r.input_tokens.toLocaleString()), h('span', {}, 'input tokens')),
         h('div', {class: 'stat'}, h('b', {}, r.output_tokens.toLocaleString()), h('span', {}, 'output tokens')),
         h('div', {class: 'stat'}, h('b', {}, '$' + r.cost_usd.toFixed(4)), h('span', {}, 'estimated cost')),
-        h('div', {class: 'stat'}, h('b', {}, String(denied)), h('span', {}, 'harness blocks'))),
-      r !== latest ? h('p', {class: 'meta', style: 'margin:16px 0 0'}, `Latest run ${latest.id}: ${latest.message}`) : null),
+        h('div', {class: 'stat'}, h('b', {}, String(denied)), h('span', {}, 'harness blocks')))),
     Object.keys(agents).length === 0 ? null : h('div', {class: 'card'}, h('h2', {}, 'Agents'), h('div', {class: 'wrap'}, h('table', {},
       h('thead', {}, h('tr', {}, ['Agent', 'Calls', 'Input', 'Output', 'Seconds'].map((c, i) => h('th', i ? {style: 'text-align:right'} : {}, c)))),
       h('tbody', {}, Object.entries(agents).map(([n, x]) => h('tr', {}, h('td', {}, n), h('td', {class: 'n'}, String(x.calls)), h('td', {class: 'n'}, x.i.toLocaleString()), h('td', {class: 'n'}, x.o.toLocaleString()), h('td', {class: 'n'}, (x.ms / 1000).toFixed(1))))))))
@@ -274,7 +275,7 @@ async function poll() {
   document.getElementById('run').textContent = s.running ? 'Running...' : 'Run pipeline';
   const finished = running && !s.running;
   running = s.running;
-  if (finished) { toast('Run finished'); if (!document.querySelector('main [data-dirty]')) render(true); }
+  if (finished) { toast((await api('/api/runs'))[0]?.message || 'Run finished'); if (!document.querySelector('main [data-dirty]')) render(true); }
   // Only live views refresh during a run, so a draft being edited is never overwritten.
   else if (running && (tab === 'Pipeline' || tab === 'Audit')) render();
 }

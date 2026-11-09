@@ -62,6 +62,51 @@ def test_second_run_skips_seen_urls_without_calling_agents(tmp_path):
     assert len(rows(path, "SELECT * FROM audit WHERE action='agent_run'")) == before
 
 
+def test_nothing_new_says_how_many_items_were_checked(tmp_path):
+    path, _ = run(tmp_path)
+    run_id = run_pipeline(path, "mock", "mock", 1.0, collectors={"hackernews": lambda: [item(1), item(2)], "arxiv": lambda: [item(3, "arxiv", 0, 0)]})
+    message = rows(path, f"SELECT message FROM runs WHERE id = {run_id}")[0]["message"]
+    assert message.startswith("Nothing new") and "3 items" in message and "no drafts" in message.lower()
+
+
+def test_nothing_new_names_a_source_that_could_not_be_reached(tmp_path):
+    path, _ = run(tmp_path)
+
+    def down():
+        raise ConnectionError("arXiv is down")
+
+    run_id = run_pipeline(path, "mock", "mock", 1.0, collectors={"hackernews": lambda: [item(1)], "arxiv": down})
+    assert "arxiv" in rows(path, f"SELECT message FROM runs WHERE id = {run_id}")[0]["message"]
+
+
+def test_hacker_news_is_searched_newest_first(monkeypatch):
+    calls = []
+
+    class Reply:
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return {"hits": []}
+
+    monkeypatch.setattr(sources.httpx, "get", lambda url, **kw: calls.append((url, kw["params"])) or Reply())
+    sources.fetch_hn("AI agents")
+    assert calls[0][0].endswith("/search_by_date") and calls[0][1]["query"] == "AI agents"
+
+
+def test_collection_covers_front_page_and_every_query(monkeypatch):
+    calls = []
+
+    def fake(query, limit=10, tags="story"):
+        calls.append((query, tags))
+        return []
+
+    monkeypatch.setattr(sources, "fetch_hn", fake)
+    sources.collect_hn()
+    assert {q for q, _ in calls} >= set(sources.HN_QUERIES)
+    assert any("front_page" in t for _, t in calls)
+
+
 def test_failed_run_does_not_mark_items_as_seen(tmp_path):
     path = tmp_path / "t.db"
     same = {"hackernews": lambda: [item(1)], "arxiv": lambda: []}

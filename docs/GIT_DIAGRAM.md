@@ -42,4 +42,8 @@ gitGraph
     commit id: "style(ui): warm paper redesign"
     checkout main
     merge style/dashboard-polish id: "merge: dashboard polish"
+    branch fix/fresher-topics
+    commit id: "fix(sources): newest topics, clear empty runs"
+    checkout main
+    merge fix/fresher-topics id: "merge: fresher topics"
 ```
