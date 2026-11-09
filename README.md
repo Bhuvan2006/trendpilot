@@ -8,7 +8,7 @@ Design: [docs/DESIGN.md](docs/DESIGN.md) · Demo script: [docs/DEMO.md](docs/DEM
 
 ## Status
 
-59 passing tests, run offline, cover the real Agno Workflow, the API and the approval gate. Two full runs on live Hacker News and arXiv data with `nvidia/nemotron-3-ultra-550b-a55b` completed in 5.5 and 7 minutes, used 90,139 and 125,868 input tokens (16,014 and 21,622 output), and each produced 4 reviewed drafts from real sources. In the second run the Brand Reviewer flagged 2 drafts for overclaiming about Dots-In. Two runs are not a benchmark.
+63 passing tests, run offline, cover the real Agno Workflow, the API and the approval gate. Three full runs on live Hacker News and arXiv data with `nvidia/nemotron-3-ultra-550b-a55b` completed in 5.5, 7 and 10.2 minutes, used 90,139, 125,868 and 136,218 input tokens (16,014, 21,622 and 24,605 output), and each produced 4 reviewed drafts from real sources. In the second and third runs 2 drafts were flagged in review. Three runs are not a benchmark.
 
 ## Setup (Windows PowerShell)
 
